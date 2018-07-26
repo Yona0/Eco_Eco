@@ -1,0 +1,35 @@
+#1. To use "redlist" package
+library(reldist)
+
+#2. Read my data
+Data <- read.csv("Desktop/Yona/Eco_Eco/Data.csv", as.is = TRUE, na.strings = c("*", "**"))
+
+#3. Replacing # with 208000
+Data$A_MEAN[Data$A_MEAN == "#"] <- 208000
+
+#4. Remove commas from my data
+Population <- gsub(",", "", Data$TOT_EMP)
+Income <- gsub(",", "", Data$A_MEAN)
+
+#5. Convert into numeric vector
+Population <- as.numeric(Population)
+head(Population)
+Income <- as.numeric(Income)
+head(Income)
+
+#6. Make column for total income per occupation (TIPC)
+Total <- Population*Income
+head(Total)
+
+#7. One more step before making new dataframe
+Area <- Data$AREA_NAME
+Code <- Data$OCC_CODE
+OCC <- Data$OCC_TITLE
+
+#8. Make a simplified dataframe for inequality analysis
+Data <- data.frame(Area, Code, OCC, Population, Income, Total)
+Data <- Data[-grep("-0000", Data$Code), ]
+Data <- Data[!(is.na(Data$Population) | is.na(Data$Income)), ]
+
+#9. Export this dataframe into a csv
+write.csv(Data, "Desktop/Yona//Eco_Eco/intermediate_data.csv")
