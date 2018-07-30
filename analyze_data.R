@@ -1,7 +1,28 @@
 library(reldist)
 # Install using these directions:
 # http://bioconductor.org/packages/release/bioc/html/BioCor.html
-library(BioCor)
+#library(BioCor)
+
+selectRandomPairs <- function(numCities,numPairsSamp) {
+    numPairsTot <- choose(numCities,2)
+    sampIndexVect <- sample.int(numPairsTot,numPairsSamp)
+    pairMatrix <- matrix(NA,numPairsSamp,2)
+    fastCounter <- 1
+    slowCounter <- 1
+    for(n1 in 1:(numCities-1)) {
+      for(n2 in (n1+1):numCities) {
+        if(fastCounter %in% sampIndexVect) {
+          # Then add the pair to matrix
+          pairMatrix[slowCounter,] <- c(n1,n2)
+          slowCounter <- slowCounter + 1
+	}
+        fastCounter <- fastCounter + 1
+      }
+    }
+    return(pairMatrix)
+}
+
+
 #10. Use this dataframe
 Data <- read.csv("intermediate_data.csv",stringsAsFactors=F)
 
@@ -50,11 +71,14 @@ abline(lm(Y~entVect), col="red", lty=1)
 
 numPairsTot <- choose(length(MSAs),2)
 numPairsSamp <- length(MSAs)
-sampIndexVect <- sample.int(numPairsTot,numPairsSamp)
+#sampIndexVect <- sample.int(numPairsTot,numPairsSamp)
+pairMatrix <- selectRandomPairs(length(MSAs),numPairsSamp)
+
 entVectVirtual <- rep(NA,numPairsSamp)
 giniVectVirtual <- rep(NA,numPairsSamp)
-for(ii in 1:length(sampIndexVect)) {
-  pair <- combinadic(1:length(MSAs),2,sampIndexVect[ii])
+for(ii in 1:numPairsSamp) {
+  #pair <- combinadic(1:length(MSAs),2,sampIndexVect[ii])
+  pair <- pairMatrix[ii,]
   print(pair)
   MSA1 <- MSAs[pair[1]]
   MSA2 <- MSAs[pair[2]]
@@ -77,7 +101,21 @@ for(ii in 1:length(sampIndexVect)) {
       M2[jj] <- X2[X2$OCC == jobs[jj],"Income"]
     }
   }
+  N <- N1 + N2
+  M <- (N1*M1 + N2*M2)/(N1+N2)
+  p <- N/sum(N)
+  giniVectVirtual[ii] <- gini(M,p)
+  entVectVirtual[ii] <- -sum(p*log(p))
 }
+
+xMin <- min(giniVect,giniVectVirtual)
+yMin <- min(entVect,entVectVirtual)
+xMax <- max(giniVect,giniVectVirtual)
+yMax <- max(entVect,entVectVirtual)
+
+plot(giniVect, entVect,xlim=c(xMin,xMax),ylim=c(yMin,yMax))
+points(giniVectVirtual,entVectVirtual,col="red")
+
 ##19. Make virtual MSAs (in process)
 #for(MSA in MSAs) {
 #  X1 <- Data[Data$Area == MSA,]
